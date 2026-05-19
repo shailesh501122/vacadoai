@@ -29,20 +29,24 @@ export async function uploadBuffer(
   contentType: string,
 ): Promise<string> {
   if (s3) {
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: env.s3.bucket,
-        Key: key,
-        Body: body,
-        ContentType: contentType,
-      }),
-    );
-    const base =
-      env.s3.publicUrl ||
-      (env.s3.endpoint
-        ? `${env.s3.endpoint}/${env.s3.bucket}`
-        : `https://${env.s3.bucket}.s3.${env.s3.region}.amazonaws.com`);
-    return `${base}/${key}`;
+    try {
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: env.s3.bucket,
+          Key: key,
+          Body: body,
+          ContentType: contentType,
+        }),
+      );
+      const base =
+        env.s3.publicUrl ||
+        (env.s3.endpoint
+          ? `${env.s3.endpoint}/${env.s3.bucket}`
+          : `https://${env.s3.bucket}.s3.${env.s3.region}.amazonaws.com`);
+      return `${base}/${key}`;
+    } catch (err) {
+      logger.warn(`S3 upload failed for ${key}, falling back to local storage: ${String(err)}`);
+    }
   }
 
   // Local fallback.
