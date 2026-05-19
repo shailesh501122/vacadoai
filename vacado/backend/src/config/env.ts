@@ -62,4 +62,19 @@ export const env = {
     sendgridKey: process.env.SENDGRID_API_KEY ?? '',
     from: process.env.EMAIL_FROM ?? 'Vacado <no-reply@vacado.app>',
   },
+
+  // Local media fallback when S3 is not configured. Files are written here
+  // and served by the API at /media, so generation works with zero cloud setup.
+  media: {
+    dir: process.env.MEDIA_DIR ?? `${process.cwd()}/media`,
+    // Empty => store relative "/media/..." URLs (resolved same-origin via Nginx).
+    publicBase: process.env.MEDIA_PUBLIC_URL ?? '',
+  },
+  // Worker fetches generated media from the backend over the internal network.
+  internalApiUrl: process.env.INTERNAL_API_URL ?? 'http://backend:4000',
 };
+
+export const hasOpenAI = () => Boolean(env.openaiKey);
+export const hasElevenLabs = () => Boolean(env.elevenLabsKey);
+export const hasS3 = () =>
+  Boolean(env.s3.accessKeyId && env.s3.secretAccessKey && env.s3.bucket);

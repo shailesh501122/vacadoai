@@ -1,4 +1,5 @@
 import express from 'express';
+import { mkdirSync } from 'fs';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -28,6 +29,17 @@ export function createApp() {
 
   app.use(express.json({ limit: '2mb' }));
   app.use(cookieParser());
+
+  // Serve generated media (used when S3 is not configured).
+  mkdirSync(env.media.dir, { recursive: true });
+  app.use(
+    '/media',
+    express.static(env.media.dir, {
+      maxAge: '7d',
+      setHeaders: (res) => res.set('Access-Control-Allow-Origin', '*'),
+    }),
+  );
+
   app.use('/api', generalLimiter);
 
   app.get('/api/health', (_req, res) => {

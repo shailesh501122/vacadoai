@@ -40,7 +40,11 @@ export async function processGenerateShort(data: GenerateShortJob): Promise<void
     });
 
     // 2. Voiceover → S3
-    const voBuffer = await synthesizeVoiceover(script, short.voice ?? 'male');
+    const voBuffer = await synthesizeVoiceover(
+      script,
+      short.voice ?? 'male',
+      short.duration,
+    );
     const voiceoverUrl = await uploadBuffer(
       `voiceovers/${shortId}.mp3`,
       voBuffer,

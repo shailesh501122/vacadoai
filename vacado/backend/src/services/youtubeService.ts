@@ -86,7 +86,12 @@ export async function uploadVideo(opts: {
   const auth = await authedClientFor(opts.channelDbId);
   const yt = google.youtube({ version: 'v3', auth });
 
-  const stream = await axios.get<Readable>(opts.videoUrl, {
+  // Local-fallback media URLs are relative ("/media/..") — resolve them
+  // against the internal API so the worker can stream the file.
+  const videoSrc = opts.videoUrl.startsWith('http')
+    ? opts.videoUrl
+    : `${env.internalApiUrl}${opts.videoUrl}`;
+  const stream = await axios.get<Readable>(videoSrc, {
     responseType: 'stream',
   });
 
