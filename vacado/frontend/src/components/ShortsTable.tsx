@@ -1,4 +1,4 @@
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { Eye, Trash2, Download } from 'lucide-react';
 
 const STATUS_CLS: Record<string, string> = {
   PUBLISHED: 'green', PROCESSING: 'amber', SCHEDULED: 'blue',
@@ -20,6 +20,7 @@ export interface ShortRow {
   views: number;
   createdAt: string;
   duration?: number;
+  videoUrl?: string | null;
 }
 
 export default function ShortsTable({
@@ -70,8 +71,12 @@ export default function ShortsTable({
               <td><span style={{ color: 'var(--muted)' }}>{new Date(r.createdAt).toLocaleDateString()}</span></td>
               <td>
                 <div className="actions-cell" style={{ justifyContent: 'flex-end' }}>
+                  {r.status === 'PUBLISHED' && r.videoUrl && (
+                    <a className="act-btn" title="Download" href={r.videoUrl} target="_blank" rel="noreferrer" download>
+                      <Download size={16} />
+                    </a>
+                  )}
                   <button className="act-btn" title="View" onClick={() => onView?.(r.id)}><Eye size={16} /></button>
-                  <button className="act-btn" title="Edit"><Pencil size={16} /></button>
                   <button className="act-btn" title="Delete" onClick={() => onDelete?.(r.id)}><Trash2 size={16} /></button>
                 </div>
               </td>
