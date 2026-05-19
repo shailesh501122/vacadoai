@@ -1,19 +1,23 @@
 name: Deploy
 
-# Runs only after CI succeeds on main. Deploys to your Ubuntu server over SSH.
+# Auto-deploys to the Ubuntu server on every push to main.
+# Type-checks first so a broken build is never deployed.
 #
 # Required GitHub repo secrets (Settings → Secrets and variables → Actions):
-#   DEPLOY_HOST   - server IP / hostname (e.g. 161.118.165.248)
-#   DEPLOY_USER   - ssh user (e.g. ubuntu)
-#   DEPLOY_SSH_KEY- PRIVATE key of a NEWLY generated keypair (NOT the leaked one)
-#   DEPLOY_PORT   - ssh port (optional, default 22)
-#   APP_ENV       - full contents of the production .env file
-#   WEB_PORT      - host port for the app (optional, default 8080)
+#   DEPLOY_HOST    - server IP (161.118.165.248)
+#   DEPLOY_USER    - ssh user (ubuntu)
+#   DEPLOY_SSH_KEY - a private key whose public half is in the server's
+#                    ~/.ssh/authorized_keys  (use a FRESH key, not a leaked one)
+#   DEPLOY_PORT    - ssh port (optional, default 22)
+# Optional repo variable:
+#   WEB_PORT       - host port the app binds (default 8080)
+#
+# Notes:
+#  * The server's vacado/.env is the source of truth and is NOT overwritten.
+#  * deploy.sh backs up the Postgres DB before each deploy and never drops it.
 
 on:
-  workflow_run:
-    workflows: ['CI']
-    types: [completed]
+  push:
     branches: [main]
   workflow_dispatch:
 
@@ -22,8 +26,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Type-check backend
+        working-directory: vacado/backend
+        run: |
+          npm ci
+          npx prisma generate
+          npx tsc --noEmit
+      - name: Type-check & build frontend
+        working-directory: vacado/frontend
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npm run build
+
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    needs: verify
     runs-on: ubuntu-latest
     steps:
       - name: Deploy over SSH
@@ -33,7 +57,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
-          envs: WEB_PORT
+          command_timeout: 20m
           script_stop: true
           script: |
             set -euo pipefail
@@ -44,9 +68,10 @@ jobs:
             cd "$REPO_DIR"
             git fetch --all
             git reset --hard origin/main
-            # Write production env from the APP_ENV secret (never committed).
-            cat > vacado/.env <<'ENVEOF'
-            ${{ secrets.APP_ENV }}
-            ENVEOF
-            export WEB_PORT="${{ secrets.WEB_PORT || '8080' }}"
-            bash vacado/deploy/deploy.sh
+            cd vacado
+            if [ ! -f .env ]; then
+              echo "ERROR: vacado/.env missing on server. Create it once, then re-run." >&2
+              exit 1
+            fi
+            export WEB_PORT="${{ vars.WEB_PORT || '8080' }}"
+            bash deploy/deploy.sh
