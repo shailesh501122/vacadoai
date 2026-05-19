@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Plan {
+  STARTER
+  PRO
+  AGENCY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  TRIALING
+  INCOMPLETE
+}
+
+enum ShortStatus {
+  PENDING
+  PROCESSING
+  PUBLISHED
+  FAILED
+  SCHEDULED
+}
+
+enum JobType {
+  GENERATE_SHORT
+  UPLOAD_YOUTUBE
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  name         String
+  googleId     String?  @unique
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subscription Subscription?
+  channels     YoutubeChannel[]
+  shorts       Short[]
+  apiKeys      ApiKey[]
+
+  @@map("users")
+}
+
+model Subscription {
+  id               String             @id @default(cuid())
+  userId           String             @unique
+  stripeCustomerId String?            @unique
+  stripeSubId      String?            @unique
+  stripePriceId    String?
+  plan             Plan               @default(STARTER)
+  status           SubscriptionStatus @default(TRIALING)
+  currentPeriodEnd DateTime?
+  shortsUsed       Int                @default(0)
+  shortsLimit      Int                @default(30)
+  channelLimit     Int                @default(1)
+  languageLimit    Int                @default(5)
+  apiAccess        Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model YoutubeChannel {
+  id              String   @id @default(cuid())
+  userId          String
+  channelId       String
+  channelName     String
+  handle          String?
+  accessToken     String
+  refreshToken    String
+  tokenExpiry     DateTime?
+  thumbnailUrl    String?
+  subscriberCount Int      @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shorts Short[]
+
+  @@unique([userId, channelId])
+  @@map("youtube_channels")
+}
+
+model Short {
+  id             String      @id @default(cuid())
+  userId         String
+  channelId      String?
+  movieTitle     String
+  language       String
+  clipStyle      String?
+  tone           String?
+  duration       Int         @default(60)
+  voice          String?
+  scriptText     String?
+  voiceoverUrl   String?
+  videoUrl       String?
+  thumbnailUrl   String?
+  title          String?
+  hashtags       String?
+  status         ShortStatus @default(PENDING)
+  youtubeVideoId String?
+  views          Int         @default(0)
+  scheduledAt    DateTime?
+  publishedAt    DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel YoutubeChannel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  jobs    Job[]
+
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@map("shorts")
+}
+
+model Job {
+  id        String    @id @default(cuid())
+  shortId   String
+  type      JobType
+  status    JobStatus @default(QUEUED)
+  attempts  Int       @default(0)
+  errorLog  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  short Short @relation(fields: [shortId], references: [id], onDelete: Cascade)
+
+  @@index([shortId])
+  @@map("jobs")
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  keyHash    String    @unique
+  prefix     String
+  name       String
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+}
