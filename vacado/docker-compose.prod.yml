@@ -44,6 +44,8 @@ services:
         condition: service_healthy
     command: sh -c "npx prisma migrate deploy && node dist/server.js"
     restart: unless-stopped
+    volumes:
+      - mediadata:/app/media
 
   worker:
     build: ./backend
@@ -53,6 +55,8 @@ services:
       - redis
     command: node dist/jobs/worker.js
     restart: unless-stopped
+    volumes:
+      - mediadata:/app/media
 
   frontend:
     build: ./frontend
@@ -74,3 +78,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  mediadata:

@@ -40,6 +40,8 @@ services:
     command: sh -c "npx prisma migrate deploy && node dist/server.js"
     ports:
       - '4000:4000'
+    volumes:
+      - mediadata:/app/media
 
   worker:
     build: ./backend
@@ -48,6 +50,8 @@ services:
       - backend
       - redis
     command: node dist/jobs/worker.js
+    volumes:
+      - mediadata:/app/media
 
   frontend:
     build: ./frontend
@@ -69,3 +73,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  mediadata:

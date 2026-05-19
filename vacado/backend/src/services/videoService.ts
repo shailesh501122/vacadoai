@@ -26,9 +26,9 @@ export async function fetchSourceClip(movieTitle: string): Promise<Buffer> {
   }
 }
 
-function run(cmd: string, args: string[]): Promise<void> {
+function run(cmd: string, args: string[], cwd?: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const p = spawn(cmd, args);
+    const p = spawn(cmd, args, { cwd });
     let stderr = '';
     p.stderr.on('data', (d) => (stderr += d.toString()));
     p.on('error', reject);
@@ -93,7 +93,7 @@ export async function composeVideo(opts: {
     if (hasClip) await writeFile(clipPath, opts.clip);
 
     const videoInput = hasClip
-      ? ['-i', clipPath]
+      ? ['-i', 'clip.mp4']
       : [
           '-f',
           'lavfi',
@@ -103,13 +103,13 @@ export async function composeVideo(opts: {
 
     const baseScale =
       'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920';
-    const withSubs = `${baseScale},subtitles='${srtPath.replace(/\\/g, '/')}':force_style='FontName=DejaVu Sans,FontSize=18,PrimaryColour=&Hffffff&,OutlineColour=&H80000000&,BorderStyle=3,Outline=2,Alignment=2,MarginV=120'`;
+    const withSubs = `${baseScale},subtitles='subs.srt':force_style='FontName=DejaVu Sans,FontSize=18,PrimaryColour=&Hffffff&,OutlineColour=&H80000000&,BorderStyle=3,Outline=2,Alignment=2,MarginV=120'`;
 
     const buildArgs = (vf: string) => [
       '-y',
       ...videoInput,
       '-i',
-      audioPath,
+      'vo.mp3',
       '-vf',
       vf,
       '-map',
@@ -127,14 +127,14 @@ export async function composeVideo(opts: {
       'aac',
       '-t',
       String(opts.duration),
-      outPath,
+      'out.mp4',
     ];
 
     try {
-      await run('ffmpeg', buildArgs(withSubs));
+      await run('ffmpeg', buildArgs(withSubs), dir);
     } catch (err) {
       logger.warn(`Caption pass failed, retrying without subtitles: ${String(err)}`);
-      await run('ffmpeg', buildArgs(baseScale));
+      await run('ffmpeg', buildArgs(baseScale), dir);
     }
 
     return await readFile(outPath);
