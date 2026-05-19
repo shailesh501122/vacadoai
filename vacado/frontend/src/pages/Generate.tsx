@@ -4,7 +4,7 @@ import {
   Check, Search, Link2, ArrowRight, ArrowLeft, X, Plus, Zap,
   MessageSquare, Sparkles, Flag, Calendar, Clock, RefreshCw, Play,
 } from 'lucide-react';
-import { shortsApi, channelsApi } from '../api/endpoints';
+import { shortsApi } from '../api/endpoints';
 
 const MOVIES = [
   { title: 'Inception', year: '2010', color: '#7c3aed', initials: 'IN' },
@@ -31,20 +31,11 @@ export default function Generate() {
   const [tone, setTone] = useState('dramatic');
   const [duration, setDuration] = useState('60s');
   const [voice, setVoice] = useState('male');
-  const [channel, setChannel] = useState('');
-  const [channels, setChannels] = useState<any[]>([]);
-  const [publishMode, setPublishMode] = useState('schedule');
   const [title, setTitle] = useState('The Inception Ending Explained — Was It All a Dream?');
   const [tags, setTags] = useState('#inception #moviedecoded #cinemashort #dicaprio #christophernolan #endingexplained');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
 
-  useEffect(() => {
-    channelsApi.list().then((d) => {
-      setChannels(d.channels ?? []);
-      if (d.channels?.[0]) setChannel(d.channels[0].id);
-    }).catch(() => undefined);
-  }, []);
 
   const toggleLang = (c: string) =>
     setLangs((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]));
@@ -58,11 +49,9 @@ export default function Generate() {
       await shortsApi.generate({
         movieTitle: picked.title,
         language: langName,
-        channelId: channel || undefined,
         clipStyle, tone,
         duration: parseInt(duration, 10),
         voice, title, hashtags: tags,
-        publishNow: publishMode === 'now',
       });
       setMsg('Queued! Generating your Short…');
       setTimeout(() => nav('/dashboard/shorts'), 1200);
@@ -81,7 +70,7 @@ export default function Generate() {
           <div className="sp-divider" />
           <div className={`sp ${stepStatus(2)}`}><span className="n">{step > 2 ? <Check size={13} /> : '2'}</span> Short Configuration</div>
           <div className="sp-divider" />
-          <div className={`sp ${stepStatus(3)}`}><span className="n">3</span> Publishing</div>
+          <div className={`sp ${stepStatus(3)}`}><span className="n">3</span> Review Metadata</div>
         </div>
       </div>
 
@@ -205,40 +194,8 @@ export default function Generate() {
       {step === 3 && (
         <div className="row r2" style={{ marginBottom: 0 }}>
           <div className="card">
-            <div className="card-head"><div><h3>Step 3 — Publish</h3><div className="sub">Pick channel and review your auto-generated metadata</div></div></div>
+            <div className="card-head"><div><h3>Step 3 — Review Metadata</h3><div className="sub">Review your auto-generated title and hashtags</div></div></div>
             <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div className="field">
-                <label>YouTube channel</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {(channels.length ? channels : [{ id: 'cs', channelName: '@CinemaShorts', subscriberCount: 1200000 }]).map((c: any) => (
-                    <div key={c.id} onClick={() => setChannel(c.id)} style={{
-                      display: 'flex', alignItems: 'center', gap: 12, padding: 12,
-                      border: `1px solid ${channel === c.id ? 'var(--red)' : 'var(--border)'}`,
-                      background: channel === c.id ? 'var(--red-soft)' : '#fff', borderRadius: 8, cursor: 'pointer',
-                    }}>
-                      <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#ef4444', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: 13 }}>{(c.channelName ?? 'C')[1]?.toUpperCase() ?? 'C'}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13.5, fontWeight: 600 }}>{c.channelName}</div>
-                        <div style={{ fontSize: 12, color: 'var(--faint)' }}>{(c.subscriberCount ?? 0).toLocaleString()} subscribers</div>
-                      </div>
-                      {channel === c.id && <Check size={20} style={{ color: 'var(--red)' }} />}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="field">
-                <label>Publish</label>
-                <div className="toggle-pills">
-                  <button className={publishMode === 'now' ? 'on' : ''} onClick={() => setPublishMode('now')}>Publish Now</button>
-                  <button className={publishMode === 'schedule' ? 'on' : ''} onClick={() => setPublishMode('schedule')}>Schedule</button>
-                </div>
-              </div>
-              {publishMode === 'schedule' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div className="field"><label>Date</label><div className="input-ic"><Calendar size={18} /><input className="input" defaultValue="May 21, 2026" /></div></div>
-                  <div className="field"><label>Time</label><div className="input-ic"><Clock size={18} /><input className="input" defaultValue="09:00 AM PST" /></div></div>
-                </div>
-              )}
               <div className="field">
                 <label>Title <span style={{ color: 'var(--faint)', fontWeight: 400 }}>· auto-generated, editable</span></label>
                 <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -274,7 +231,7 @@ export default function Generate() {
               </div>
               {msg && <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--red)', fontWeight: 600 }}>{msg}</div>}
               <button className="btn primary full lg" onClick={submit} disabled={busy}>
-                <Sparkles size={18} /> {busy ? 'Queuing…' : 'Generate & Upload'}
+                <Sparkles size={18} /> {busy ? 'Queuing…' : 'Generate Short'}
               </button>
             </div>
           </div>

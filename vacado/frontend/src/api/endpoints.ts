@@ -23,12 +23,7 @@ export const shortsApi = {
     api.post(`/shorts/${id}/schedule`, { scheduledAt }).then((r) => r.data),
 };
 
-export const channelsApi = {
-  list: () => api.get('/channels').then((r) => r.data),
-  connect: () => api.post('/channels/connect').then((r) => r.data),
-  remove: (id: string) => api.delete(`/channels/${id}`).then((r) => r.data),
-  toggle: (id: string) => api.patch(`/channels/${id}/toggle`).then((r) => r.data),
-};
+
 
 export const subsApi = {
   me: () => api.get('/subscriptions/me').then((r) => r.data),

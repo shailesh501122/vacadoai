@@ -12,7 +12,6 @@ const NAV = [
     { id: 'generate', label: 'Generate New', icon: Sparkles, ext: 'AI' },
   ]},
   { group: 'Management', items: [
-    { id: 'channels', label: 'Channels', icon: Youtube },
     { id: 'schedule', label: 'Schedule', icon: Calendar },
     { id: 'languages', label: 'Languages', icon: Languages },
   ]},
@@ -33,7 +32,6 @@ const TITLES: Record<string, { title: string; crumb: string }> = {
   generate: { title: 'Generate New', crumb: 'Create a new automated Short' },
   shorts: { title: 'My Shorts', crumb: 'All generated Shorts' },
   subscription: { title: 'Subscription', crumb: 'Manage plan, billing, and usage' },
-  channels: { title: 'Channels', crumb: 'Connected YouTube accounts' },
   analytics: { title: 'Performance', crumb: 'Views, languages, and revenue' },
   settings: { title: 'Account', crumb: 'Profile, security, API keys' },
 };
@@ -97,7 +95,7 @@ export default function DashboardLayout() {
           <div className="right">
             <div className="search">
               <Search size={18} />
-              <input placeholder="Search Shorts, channels, movies..." />
+              <input placeholder="Search Shorts, movies..." />
             </div>
             <button className="icon-btn" title="Notifications">
               <Bell size={18} />

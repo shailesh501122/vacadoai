@@ -35,7 +35,7 @@ const PRICES = {
 const FAQS = [
   ['How does Vacado handle copyright on movie clips?', 'Vacado generates transformative, commentary-style Shorts that fall under YouTube\'s fair-use guidelines for movie explanations. We auto-trim clip lengths, add a layered voiceover, and overlay text — the same pattern used by every major movie-explanation channel. We also run a pre-upload Content ID check and flag risky scenes before they\'re published.'],
   ['How many languages are supported, and can I add my own?', 'We ship with 50+ languages out of the box, each with multiple neural voices. Pro and Agency plans can also clone your own voice in any language with a 60-second sample.'],
-  ['What\'s the actual upload limit per day?', 'YouTube allows 50 video uploads per day per channel by default. Vacado will schedule and pace your queue accordingly. There\'s no Vacado-side limit other than your plan\'s monthly Short count.'],
+
   ['Do I need any editing skills or software?', 'None. Enter a movie title, pick a language, click Generate. Everything from clip extraction to thumbnail to YouTube metadata is automated. If you want, you can step in to tweak the script or thumbnail before publishing.'],
   ['Is there an API for custom integrations?', 'Yes — Agency plans include full REST + webhook access. You can trigger generations, query analytics, and route uploads programmatically. API docs are in your dashboard once you upgrade.'],
   ['Can I cancel or switch plans anytime?', 'Yes. Cancel or downgrade from your dashboard — changes apply at the end of your billing cycle. Your generated Shorts and analytics history stay accessible even on the free tier.'],
@@ -70,7 +70,7 @@ export default function Landing() {
           <div>
             <span className="badge-pill"><span className="dot" /> Now supporting 50+ languages</span>
             <h1>Turn Any Movie Into a Viral <span className="accent">YouTube Short</span> — Fully Automated</h1>
-            <p className="sub">Vacado finds the clip, writes the explanation, adds voiceover in any language, and uploads it to YouTube — zero manual work.</p>
+            <p className="sub">Vacado finds the clip, writes the explanation, adds voiceover in any language, and generates a ready-to-upload video — zero manual work.</p>
             <div className="hero-ctas">
               <Link className="btn btn-primary" to="/register">Start Free Trial <ArrowRight size={16} /></Link>
               <a className="btn btn-outline" href="#how"><Play size={16} /> Watch Demo</a>
@@ -114,12 +114,12 @@ export default function Landing() {
               </div>
             </div>
             <div className="card-float card-upload">
-              <div className="card-title"><Youtube size={16} /> Upload status</div>
+              <div className="card-title"><Youtube size={16} /> Status</div>
               <div className="upload-row">
                 <div className="yt"><Youtube size={18} /></div>
                 <div>
-                  <div className="label">@CinemaShorts</div>
-                  <div className="sub">Published · 12s ago</div>
+                  <div className="label">Ready for Download</div>
+                  <div className="sub">Generated · 12s ago</div>
                 </div>
                 <div className="check"><Check size={12} /></div>
               </div>
@@ -162,8 +162,8 @@ export default function Landing() {
             <div className="step">
               <div className="step-num">3</div>
               <div className="ic"><Youtube size={26} /></div>
-              <h3>Auto Voiceover + Upload</h3>
-              <p>Choose a language and voice. Vacado renders, schedules, and publishes directly to your channel.</p>
+              <h3>Auto Voiceover + Ready to Download</h3>
+              <p>Choose a language and voice. Vacado renders your Short and prepares it for immediate download.</p>
             </div>
           </div>
         </div>
@@ -182,9 +182,9 @@ export default function Landing() {
               [<Scissors size={22} />, 'AI Clip Detection', 'Scene-aware models surface the most viral 60-second moments from any film — pacing, emotion, and dialogue weighted.'],
               [<Mic size={22} />, 'Multi-Language Voiceover', 'Studio-quality neural voices in 50+ languages with natural prosody, including AI clones of your own voice.'],
               [<FileText size={22} />, 'Auto Script Generation', 'Hook-first scripts tuned per language and audience. Edit any line or regenerate the whole thing in one click.'],
-              [<Youtube size={22} />, 'YouTube Direct Upload', 'OAuth-connected upload with title, hashtags, thumbnails, captions, and end-screen handled for you.'],
-              [<BarChart3 size={22} />, 'Channel Analytics Dashboard', 'Track views, watch-time, RPM, and per-language performance across every channel in one place.'],
-              [<Calendar size={22} />, 'Bulk Scheduling', 'Queue weeks of content. Vacado spaces uploads across channels and timezones to maximize reach.'],
+              [<Youtube size={22} />, 'Ready-to-Publish Downloads', 'Get perfectly formatted 1080x1920 MP4s with title, hashtags, and captions handled for you.'],
+              [<BarChart3 size={22} />, 'Performance Dashboard', 'Track views, watch-time, RPM, and per-language performance in one place.'],
+              [<Calendar size={22} />, 'Content Queue', 'Queue weeks of content. Vacado generates them in the background so you always have videos ready.'],
             ].map(([ic, t, d], i) => (
               <div className="feature" key={i}>
                 <div className="ic">{ic}</div>
@@ -224,7 +224,7 @@ export default function Landing() {
               <p className="desc">For solo creators testing the waters.</p>
               <div className="price"><span className="num">{p('starter')}</span><span className="per">/mo</span></div>
               <ul>
-                {['30 Shorts / month', '5 languages', '1 YouTube channel', 'Standard voices', 'Email support'].map((x) => (
+                {['30 Shorts / month', '5 languages', 'Standard voices', 'Email support'].map((x) => (
                   <li key={x}><Check size={18} /> {x}</li>
                 ))}
               </ul>
@@ -236,7 +236,7 @@ export default function Landing() {
               <p className="desc">For serious creators scaling channels.</p>
               <div className="price"><span className="num">{p('pro')}</span><span className="per">/mo</span></div>
               <ul>
-                {['150 Shorts / month', '25 languages', '5 YouTube channels', 'Premium neural voices', 'Bulk scheduling', 'Priority support'].map((x) => (
+                {['150 Shorts / month', '25 languages', 'Premium neural voices', 'Priority support'].map((x) => (
                   <li key={x}><Check size={18} /> {x}</li>
                 ))}
               </ul>
@@ -247,7 +247,7 @@ export default function Landing() {
               <p className="desc">For teams running networks of channels.</p>
               <div className="price"><span className="num">{p('agency')}</span><span className="per">/mo</span></div>
               <ul>
-                {['Unlimited Shorts', '50+ languages', '20 YouTube channels', 'White-label exports', 'Team seats & roles', 'Dedicated CSM'].map((x) => (
+                {['Unlimited Shorts', '50+ languages', 'White-label exports', 'Team seats & roles', 'Dedicated CSM'].map((x) => (
                   <li key={x}><Check size={18} /> {x}</li>
                 ))}
               </ul>

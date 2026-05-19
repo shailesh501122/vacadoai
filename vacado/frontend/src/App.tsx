@@ -7,7 +7,7 @@ import DashboardLayout from './pages/DashboardLayout';
 import DashboardHome from './pages/DashboardHome';
 import Generate from './pages/Generate';
 import MyShorts from './pages/MyShorts';
-import Channels from './pages/Channels';
+
 import Subscription from './pages/Subscription';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
@@ -35,7 +35,7 @@ export default function App() {
         <Route index element={<DashboardHome />} />
         <Route path="generate" element={<Generate />} />
         <Route path="shorts" element={<MyShorts />} />
-        <Route path="channels" element={<Channels />} />
+
         <Route path="subscription" element={<Subscription />} />
         <Route path="analytics" element={<Analytics />} />
         <Route path="settings" element={<Settings />} />

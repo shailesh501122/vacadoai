@@ -46,10 +46,7 @@ export default function Subscription() {
               <div className="top"><b>Shorts Used</b><span>{shortsUsed} / {shortsLimit} this month</span></div>
               <div className="bar"><div className="fill" style={{ width: `${pct(shortsUsed, shortsLimit)}%` }} /></div>
             </div>
-            <div className="usage-row">
-              <div className="top"><b>Connected Channels</b><span>3 / {s?.channelLimit ?? 5}</span></div>
-              <div className="bar"><div className="fill" style={{ width: `${pct(3, s?.channelLimit ?? 5)}%` }} /></div>
-            </div>
+
             <div className="usage-row">
               <div className="top"><b>Languages</b><span>12 / {s?.languageLimit ?? 25}</span></div>
               <div className="bar"><div className="fill" style={{ width: `${pct(12, s?.languageLimit ?? 25)}%` }} /></div>
@@ -66,9 +63,9 @@ export default function Subscription() {
           <div style={{ position: 'relative' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--red)', color: '#fff', fontSize: 11.5, fontWeight: 700, padding: '4px 10px', borderRadius: 999, letterSpacing: '.04em', textTransform: 'uppercase' }}><Zap size={13} /> Recommended</span>
             <h2 style={{ fontSize: 22, fontWeight: 700, margin: '14px 0 6px', color: '#fff' }}>Upgrade to Agency</h2>
-            <p style={{ margin: 0, fontSize: 13.5, color: '#bdbdbd', lineHeight: 1.55 }}>Unlimited Shorts, 50+ languages, 20 channels, and white-label exports for your team.</p>
+            <p style={{ margin: 0, fontSize: 13.5, color: '#bdbdbd', lineHeight: 1.55 }}>Unlimited Shorts, 50+ languages, priority rendering, and white-label exports for your team.</p>
             <ul style={{ listStyle: 'none', padding: 0, margin: '18px 0', display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
-              {['Unlimited Shorts / month', '20 YouTube channels', 'Team seats & roles'].map((x) => (
+              {['Unlimited Shorts / month', 'Priority rendering', 'Team seats & roles'].map((x) => (
                 <li key={x} style={{ display: 'flex', gap: 8, alignItems: 'center' }}><Check size={18} style={{ color: 'var(--red)' }} /> {x}</li>
               ))}
             </ul>

@@ -4,7 +4,6 @@ import { generateScript, generateThumbnail, generateMetadata } from '../services
 import { synthesizeVoiceover } from '../services/voiceoverService';
 import { fetchSourceClip, composeVideo } from '../services/videoService';
 import { uploadBuffer } from '../services/s3Service';
-import { uploadVideo } from '../services/youtubeService';
 import { sendEmail, emails } from '../services/emailService';
 import type { GenerateShortJob } from './queue';
 
@@ -87,42 +86,17 @@ export async function processGenerateShort(data: GenerateShortJob): Promise<void
       data: { scriptText: script, voiceoverUrl, videoUrl, thumbnailUrl, ...meta },
     });
 
-    // 6. Publish to YouTube if requested / scheduled-now
-    const dueNow =
-      publishNow ||
-      (short.scheduledAt && short.scheduledAt.getTime() <= Date.now());
-
-    if (dueNow && short.channelId) {
-      const ytId = await uploadVideo({
-        channelDbId: short.channelId,
-        videoUrl,
-        title: meta.title,
-        description: `${script}\n\n${meta.hashtags}`,
-        tags: meta.hashtags.split(/\s+/).map((t) => t.replace('#', '')),
-        publishAt:
-          short.scheduledAt && short.scheduledAt.getTime() > Date.now()
-            ? short.scheduledAt
-            : undefined,
-      });
-      await prisma.short.update({
-        where: { id: shortId },
-        data: {
-          status: 'PUBLISHED',
-          youtubeVideoId: ytId,
-          publishedAt: new Date(),
-        },
-      });
-      await sendEmail(
-        short.user.email,
-        'Your Short is live 🎬',
-        emails.shortPublished(meta.title, `https://youtu.be/${ytId}`),
-      ).catch(() => undefined);
-    } else {
-      await prisma.short.update({
-        where: { id: shortId },
-        data: { status: short.scheduledAt ? 'SCHEDULED' : 'PENDING' },
-      });
-    }
+    // 6. Mark as completed (ready for download)
+    await prisma.short.update({
+      where: { id: shortId },
+      data: { status: 'PUBLISHED', publishedAt: new Date() },
+    });
+    
+    await sendEmail(
+      short.user.email,
+      'Your Short is ready 🎬',
+      emails.shortPublished(meta.title, videoUrl),
+    ).catch(() => undefined);
 
     // 7. Bookkeeping — count one used Short
     await prisma.subscription.update({

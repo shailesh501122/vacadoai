@@ -29,7 +29,7 @@ export default function DashboardHome() {
     <>
       <div className="row r4">
         <KPICard icon={<Video size={20} />} num={ov ? `${ov.totalShorts}` : '1,284'} label="Total Shorts Generated" trend={{ dir: 'up', text: '12% this month' }} />
-        <KPICard icon={<Youtube size={20} />} num={ov ? `${ov.activeChannels}` : '5'} label="Active YouTube Channels" trend={{ dir: 'flat', text: 'No change' }} />
+
         <KPICard icon={<Eye size={20} />} num={ov ? fmt(ov.totalViews) : '2.4M'} label="Total Views This Month" trend={{ dir: 'up', text: '34%' }} />
         <KPICard icon={<Coins size={20} />} num={ov ? `$${ov.estRevenue.toLocaleString()}` : '$3,840'} label="Estimated Revenue" trend={{ dir: 'up', text: '18%' }} />
       </div>
@@ -65,7 +65,7 @@ export default function DashboardHome() {
         <div className="card-head">
           <div>
             <h3>Recent Shorts</h3>
-            <div className="sub">Across all connected channels</div>
+            <div className="sub">All generated content</div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn outline sm"><Filter size={15} /> Filter</button>

@@ -34,7 +34,7 @@ export default function Analytics() {
 
       <div className="row r2">
         <div className="card">
-          <div className="card-head"><div><h3>Views Over Time</h3><div className="sub">Last 30 days, all channels</div></div></div>
+          <div className="card-head"><div><h3>Views Over Time</h3><div className="sub">Last 30 days</div></div></div>
           <div className="chart-wrap"><ViewsLineChart series={series} /></div>
         </div>
         <div className="card">
