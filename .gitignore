@@ -8,3 +8,9 @@ build/
 coverage/
 .vite/
 tmp/
+
+# never commit keys/secrets
+*.key
+*.pem
+id_rsa*
+ssh-key-*

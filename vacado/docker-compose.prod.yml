@@ -1,0 +1,76 @@
+# Standalone production stack (no merge tags — works on any Compose v2).
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Safe-by-default: Postgres/Redis are container-internal only (no host ports,
+# so an existing DB on :5432 is untouched). The app is exposed on
+# ${WEB_PORT:-8080} so it runs ALONGSIDE whatever is already on :80. Vacado
+# uses its own named volumes, so existing data is never read or removed.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vacado
+      POSTGRES_PASSWORD: vacado
+      POSTGRES_DB: vacado
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U vacado']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: sh -c "npx prisma migrate deploy && node dist/server.js"
+    restart: unless-stopped
+
+  worker:
+    build: ./backend
+    env_file: .env
+    depends_on:
+      - backend
+      - redis
+    command: node dist/jobs/worker.js
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - frontend
+      - backend
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - '${WEB_PORT:-8080}:80'
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

@@ -1,0 +1,52 @@
+name: Deploy
+
+# Runs only after CI succeeds on main. Deploys to your Ubuntu server over SSH.
+#
+# Required GitHub repo secrets (Settings → Secrets and variables → Actions):
+#   DEPLOY_HOST   - server IP / hostname (e.g. 161.118.165.248)
+#   DEPLOY_USER   - ssh user (e.g. ubuntu)
+#   DEPLOY_SSH_KEY- PRIVATE key of a NEWLY generated keypair (NOT the leaked one)
+#   DEPLOY_PORT   - ssh port (optional, default 22)
+#   APP_ENV       - full contents of the production .env file
+#   WEB_PORT      - host port for the app (optional, default 8080)
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          envs: WEB_PORT
+          script_stop: true
+          script: |
+            set -euo pipefail
+            REPO_DIR="$HOME/vacadoai"
+            if [ ! -d "$REPO_DIR/.git" ]; then
+              git clone https://github.com/shailesh501122/vacadoai.git "$REPO_DIR"
+            fi
+            cd "$REPO_DIR"
+            git fetch --all
+            git reset --hard origin/main
+            # Write production env from the APP_ENV secret (never committed).
+            cat > vacado/.env <<'ENVEOF'
+            ${{ secrets.APP_ENV }}
+            ENVEOF
+            export WEB_PORT="${{ secrets.WEB_PORT || '8080' }}"
+            bash vacado/deploy/deploy.sh
