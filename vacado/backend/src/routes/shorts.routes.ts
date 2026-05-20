@@ -20,7 +20,5 @@ r.get('/plans', c.plans);
 r.get('/:id', c.getOne);
 r.get('/:id/download', c.download);
 r.delete('/:id', c.remove);
-r.post('/:id/publish', c.publish);
-r.post('/:id/schedule', validateBody(c.scheduleSchema), c.schedule);
 
 export default r;

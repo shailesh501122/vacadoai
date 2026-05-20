@@ -1,7 +1,7 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Video, Sparkles, Youtube, Calendar, Languages,
-  LineChart, Coins, User, Crown, Key, Users, Bell, Search, LogOut,
+  LayoutDashboard, Video, Sparkles,
+  LineChart, User, Crown, Bell, Search, LogOut,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -11,19 +11,12 @@ const NAV = [
     { id: 'shorts', label: 'My Shorts', icon: Video },
     { id: 'generate', label: 'Generate New', icon: Sparkles, ext: 'AI' },
   ]},
-  { group: 'Management', items: [
-    { id: 'schedule', label: 'Schedule', icon: Calendar },
-    { id: 'languages', label: 'Languages', icon: Languages },
-  ]},
   { group: 'Analytics', items: [
     { id: 'analytics', label: 'Performance', icon: LineChart },
-    { id: 'earnings', label: 'Earnings', icon: Coins },
   ]},
   { group: 'Settings', items: [
     { id: 'settings', label: 'Account', icon: User },
     { id: 'subscription', label: 'Subscription', icon: Crown },
-    { id: 'api', label: 'API Keys', icon: Key },
-    { id: 'team', label: 'Team', icon: Users },
   ]},
 ];
 
