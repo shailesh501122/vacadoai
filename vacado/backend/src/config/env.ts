@@ -36,6 +36,10 @@ export const env = {
   },
 
   openaiKey: process.env.OPENAI_API_KEY ?? '',
+  // Point at any OpenAI-compatible endpoint (Groq, Together, OpenRouter, etc.)
+  openaiBaseUrl: process.env.OPENAI_BASE_URL || undefined,
+  // Model name override — e.g. "llama-3.3-70b-versatile" on Groq.
+  openaiModel: process.env.OPENAI_MODEL || 'gpt-4o',
   elevenLabsKey: process.env.ELEVENLABS_API_KEY ?? '',
   youtubeApiKey: process.env.YOUTUBE_API_KEY ?? '',
 

@@ -4,7 +4,10 @@ import { env, hasOpenAI } from '../config/env';
 import { logger } from '../utils/logger';
 import { makeThumbnail } from './videoService';
 
-const openai = hasOpenAI() ? new OpenAI({ apiKey: env.openaiKey }) : null;
+const openai = hasOpenAI()
+  ? new OpenAI({ apiKey: env.openaiKey, baseURL: env.openaiBaseUrl })
+  : null;
+const MODEL = env.openaiModel;
 
 export interface ScriptParams {
   movieTitle: string;
@@ -41,7 +44,7 @@ export async function generateScript(p: ScriptParams): Promise<string> {
       p.duration
     } seconds, 400-600 characters. Output only the narration text.`;
     const res = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: MODEL,
       messages: [
         { role: 'system', content: 'You are a viral short-form scriptwriter for movie-explanation channels.' },
         { role: 'user', content: prompt },
@@ -95,7 +98,7 @@ export async function generateMetadata(
   if (!openai) return fallback;
   try {
     const res = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: MODEL,
       messages: [
         {
           role: 'user',
