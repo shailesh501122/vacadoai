@@ -3,8 +3,8 @@ import { spawn } from 'child_process';
 import { mkdtemp, readFile, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { env, hasElevenLabs } from '../config/env';
 import { logger } from '../utils/logger';
+import { getSetting } from './settingsService';
 
 // ElevenLabs default multilingual voices.
 const VOICE_IDS: Record<string, string> = {
@@ -23,7 +23,6 @@ function run(cmd: string, args: string[]): Promise<void> {
   });
 }
 
-/** Silent MP3 of the requested length so composition still produces a video. */
 async function silentTrack(duration: number): Promise<Buffer> {
   const dir = await mkdtemp(join(tmpdir(), 'vacado-vo-'));
   const out = join(dir, 'vo.mp3');
@@ -38,17 +37,13 @@ async function silentTrack(duration: number): Promise<Buffer> {
   }
 }
 
-/**
- * Convert a script to an MP3 via ElevenLabs TTS. Without a key, returns a
- * silent track of `duration` seconds so the pipeline completes (the Short
- * still renders with burnt-in captions).
- */
 export async function synthesizeVoiceover(
   script: string,
   voice = 'male',
   duration = 60,
 ): Promise<Buffer> {
-  if (!hasElevenLabs()) {
+  const apiKey = await getSetting('ELEVENLABS_API_KEY');
+  if (!apiKey) {
     logger.warn('ELEVENLABS_API_KEY not set — using silent voiceover track');
     return silentTrack(duration);
   }
@@ -63,7 +58,7 @@ export async function synthesizeVoiceover(
       },
       {
         headers: {
-          'xi-api-key': env.elevenLabsKey,
+          'xi-api-key': apiKey,
           'Content-Type': 'application/json',
           Accept: 'audio/mpeg',
         },

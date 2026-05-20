@@ -152,6 +152,7 @@ export async function me(
         email: true,
         name: true,
         avatarUrl: true,
+        isAdmin: true,
         createdAt: true,
         subscription: true,
       },

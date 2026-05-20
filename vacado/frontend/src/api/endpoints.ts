@@ -44,3 +44,9 @@ export const apiKeysApi = {
     api.post('/api-keys', { name }).then((r) => r.data),
   revoke: (id: string) => api.delete(`/api-keys/${id}`).then((r) => r.data),
 };
+
+export const adminApi = {
+  getSettings: () => api.get('/admin/settings').then((r) => r.data),
+  updateSettings: (patch: Record<string, string>) =>
+    api.put('/admin/settings', patch).then((r) => r.data),
+};

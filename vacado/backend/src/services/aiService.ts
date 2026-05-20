@@ -1,13 +1,8 @@
 import OpenAI from 'openai';
 import axios from 'axios';
-import { env, hasOpenAI } from '../config/env';
 import { logger } from '../utils/logger';
 import { makeThumbnail } from './videoService';
-
-const openai = hasOpenAI()
-  ? new OpenAI({ apiKey: env.openaiKey, baseURL: env.openaiBaseUrl })
-  : null;
-const MODEL = env.openaiModel;
+import { getSetting } from './settingsService';
 
 export interface ScriptParams {
   movieTitle: string;
@@ -15,6 +10,15 @@ export interface ScriptParams {
   clipStyle?: string;
   tone?: string;
   duration: number;
+}
+
+/** Lazily resolve the LLM client from current settings (DB → env). */
+async function client(): Promise<{ openai: OpenAI; model: string } | null> {
+  const apiKey = await getSetting('OPENAI_API_KEY');
+  if (!apiKey) return null;
+  const baseURL = (await getSetting('OPENAI_BASE_URL')) || undefined;
+  const model = (await getSetting('OPENAI_MODEL')) || 'gpt-4o';
+  return { openai: new OpenAI({ apiKey, baseURL }), model };
 }
 
 /** Deterministic, no-API script so the pipeline always completes. */
@@ -29,9 +33,9 @@ function templateScript(p: ScriptParams): string {
   return s.slice(0, 600);
 }
 
-/** GPT-4o: 400–600 char movie-explainer script in the target language. */
 export async function generateScript(p: ScriptParams): Promise<string> {
-  if (!openai) {
+  const c = await client();
+  if (!c) {
     logger.warn('OPENAI_API_KEY not set — using templated script');
     return templateScript(p);
   }
@@ -43,8 +47,8 @@ export async function generateScript(p: ScriptParams): Promise<string> {
     }. Spoken in ${p.language}, hook-first, ~${
       p.duration
     } seconds, 400-600 characters. Output only the narration text.`;
-    const res = await openai.chat.completions.create({
-      model: MODEL,
+    const res = await c.openai.chat.completions.create({
+      model: c.model,
       messages: [
         { role: 'system', content: 'You are a viral short-form scriptwriter for movie-explanation channels.' },
         { role: 'user', content: prompt },
@@ -55,19 +59,19 @@ export async function generateScript(p: ScriptParams): Promise<string> {
     const text = res.choices[0]?.message?.content?.trim();
     return text ? text.slice(0, 600) : templateScript(p);
   } catch (err) {
-    logger.warn(`OpenAI script failed, using template: ${String(err)}`);
+    logger.warn(`LLM script failed, using template: ${String(err)}`);
     return templateScript(p);
   }
 }
 
-/** DALL·E thumbnail when configured; otherwise a locally-rendered one. */
 export async function generateThumbnail(
   movieTitle: string,
   hook: string,
 ): Promise<Buffer> {
-  if (openai) {
+  const c = await client();
+  if (c) {
     try {
-      const res = await openai.images.generate({
+      const res = await c.openai.images.generate({
         model: 'dall-e-3',
         prompt: `Cinematic YouTube Shorts thumbnail for a movie-explanation video about "${movieTitle}". Bold dramatic lighting, high contrast, vertical 9:16, no watermark.`,
         size: '1024x1792',
@@ -80,13 +84,13 @@ export async function generateThumbnail(
         return Buffer.from(img.data);
       }
     } catch (err) {
-      logger.warn(`DALL·E failed, rendering local thumbnail: ${String(err)}`);
+      // Providers like Groq don't support images.generate — that's fine.
+      logger.warn(`Image generation unavailable, rendering local thumbnail: ${String(err)}`);
     }
   }
   return makeThumbnail(hook || movieTitle);
 }
 
-/** Auto title + hashtags; falls back to a sensible default without a key. */
 export async function generateMetadata(
   movieTitle: string,
   language: string,
@@ -95,10 +99,11 @@ export async function generateMetadata(
     title: `${movieTitle} — Ending Explained`,
     hashtags: `#${movieTitle.replace(/\s+/g, '').toLowerCase()} #movieexplained #shorts`,
   };
-  if (!openai) return fallback;
+  const c = await client();
+  if (!c) return fallback;
   try {
-    const res = await openai.chat.completions.create({
-      model: MODEL,
+    const res = await c.openai.chat.completions.create({
+      model: c.model,
       messages: [
         {
           role: 'user',

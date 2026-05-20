@@ -51,6 +51,7 @@ model User {
   name         String
   googleId     String?  @unique
   avatarUrl    String?
+  isAdmin      Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -153,6 +154,17 @@ model Job {
 
   @@index([shortId])
   @@map("jobs")
+}
+
+// System-wide settings (LLM/TTS provider keys, etc.) — edited by admins
+// from the UI. Read via settingsService with an env-var fallback so the app
+// keeps working if the DB row is missing.
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("app_settings")
 }
 
 model ApiKey {
