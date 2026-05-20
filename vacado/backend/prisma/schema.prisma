@@ -117,6 +117,7 @@ model Short {
   tone           String?
   duration       Int         @default(60)
   voice          String?
+  sourceClipUrl  String?
   scriptText     String?
   voiceoverUrl   String?
   videoUrl       String?

@@ -15,6 +15,8 @@ r.post(
   checkSubscriptionLimit,
   c.generate,
 );
+// User-uploaded source clip (multipart form, field name: "clip")
+r.post('/upload-clip', c.uploadClipMiddleware, c.uploadClip);
 r.get('/', c.list);
 r.get('/plans', c.plans);
 r.get('/:id', c.getOne);

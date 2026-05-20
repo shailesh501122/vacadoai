@@ -3,7 +3,25 @@ import { mkdtemp, writeFile, readFile, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import axios from 'axios';
+import { env } from '../config/env';
 import { logger } from '../utils/logger';
+
+/**
+ * Resolve any clip URL — local /media path (read from disk via the shared
+ * mediadata volume), or an absolute http(s) URL — to a buffer.
+ */
+export async function fetchClipFromUrl(url: string): Promise<Buffer> {
+  if (url.startsWith('/media/')) {
+    const filePath = join(env.media.dir, url.replace(/^\/media\//, ''));
+    return readFile(filePath);
+  }
+  const resolved = url.startsWith('http') ? url : `${env.internalApiUrl}${url}`;
+  const res = await axios.get<ArrayBuffer>(resolved, {
+    responseType: 'arraybuffer',
+    timeout: 60_000,
+  });
+  return Buffer.from(res.data);
+}
 
 /**
  * Source-clip fetch. In production this calls a licensed movie-clip API;
@@ -111,8 +129,11 @@ export async function composeVideo(opts: {
     // Caption sizing scales with resolution so it stays readable at 4K.
     const fontSize = Math.round(H * 0.026);
     const marginV = Math.round(H * 0.07);
+    // Noto Sans has near-full Unicode coverage so non-Latin scripts
+    // (Devanagari/Hindi, Arabic, CJK, etc.) render properly instead of
+    // showing as □ boxes.
     const withSubs =
-      `${baseScale},subtitles='subs.srt':force_style='FontName=DejaVu Sans,FontSize=${fontSize},PrimaryColour=&Hffffff&,OutlineColour=&H80000000&,BorderStyle=3,Outline=3,Alignment=2,MarginV=${marginV}'`;
+      `${baseScale},subtitles='subs.srt':force_style='FontName=Noto Sans,FontSize=${fontSize},PrimaryColour=&Hffffff&,OutlineColour=&H80000000&,BorderStyle=3,Outline=3,Alignment=2,MarginV=${marginV}'`;
 
     const buildArgs = (vf: string) => [
       '-y',
@@ -176,7 +197,7 @@ export async function makeThumbnail(hook: string): Promise<Buffer> {
     .slice(0, 60);
   try {
     const drawText =
-      `drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:` +
+      `drawtext=font='Noto Sans':` +
       `text='${safe}':fontcolor=white:fontsize=64:box=1:boxcolor=0x000000@0.45:` +
       `boxborderw=24:x=(w-text_w)/2:y=h-360:line_spacing=12`;
     try {

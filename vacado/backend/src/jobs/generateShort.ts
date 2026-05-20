@@ -2,7 +2,7 @@ import { prisma } from '../config/db';
 import { logger } from '../utils/logger';
 import { generateScript, generateThumbnail, generateMetadata } from '../services/aiService';
 import { synthesizeVoiceover } from '../services/voiceoverService';
-import { fetchSourceClip, composeVideo } from '../services/videoService';
+import { fetchSourceClip, fetchClipFromUrl, composeVideo } from '../services/videoService';
 import { uploadBuffer } from '../services/s3Service';
 import { sendEmail, emails } from '../services/emailService';
 import type { GenerateShortJob } from './queue';
@@ -50,8 +50,13 @@ export async function processGenerateShort(data: GenerateShortJob): Promise<void
       'audio/mpeg',
     );
 
-    // 3. Source clip
-    const clip = await fetchSourceClip(short.movieTitle);
+    // 3. Source clip — user upload if provided, otherwise placeholder fallback
+    const clip = short.sourceClipUrl
+      ? await fetchClipFromUrl(short.sourceClipUrl).catch((e) => {
+          logger.warn(`Source clip fetch failed (${short.sourceClipUrl}): ${e}`);
+          return Buffer.alloc(0);
+        })
+      : await fetchSourceClip(short.movieTitle);
 
     // 4. Compose final video
     const video = await composeVideo({

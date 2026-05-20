@@ -2,7 +2,9 @@ import { Response, NextFunction } from 'express';
 import { createReadStream } from 'fs';
 import { stat } from 'fs/promises';
 import { join } from 'path';
+import { randomUUID } from 'crypto';
 import axios from 'axios';
+import multer from 'multer';
 import { z } from 'zod';
 import { prisma } from '../config/db';
 import { PLANS } from '../config/plans';
@@ -10,6 +12,7 @@ import { env } from '../config/env';
 import { AuthedRequest } from '../middleware/authMiddleware';
 import { httpError, paginate } from '../utils/helpers';
 import { enqueueGeneration } from '../jobs/queue';
+import { uploadBuffer } from '../services/s3Service';
 
 export const generateSchema = z.object({
   movieTitle: z.string().min(1),
@@ -20,6 +23,7 @@ export const generateSchema = z.object({
   voice: z.enum(['male', 'female', 'clone']).default('male'),
   title: z.string().optional(),
   hashtags: z.string().optional(),
+  sourceClipUrl: z.string().optional(),
 });
 
 export async function generate(
@@ -45,6 +49,7 @@ export async function generate(
         voice: body.voice,
         title: body.title,
         hashtags: body.hashtags,
+        sourceClipUrl: body.sourceClipUrl,
         status: 'PENDING',
       },
     });
@@ -125,6 +130,37 @@ export async function remove(
 // Surface plan catalog for the pricing UI.
 export function plans(_req: AuthedRequest, res: Response): void {
   res.json({ plans: Object.values(PLANS) });
+}
+
+// ── Source-clip upload ──────────────────────────────────────────────
+// Accept a user-uploaded video and store it via the same upload path as
+// generated media (S3 if configured, local /media volume otherwise).
+// Returns the URL that goes into Short.sourceClipUrl.
+const uploadMw = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB cap
+  fileFilter: (_req, file, cb) => {
+    if (/^video\//.test(file.mimetype)) cb(null, true);
+    else cb(new Error('Only video files are allowed') as unknown as null, false);
+  },
+});
+export const uploadClipMiddleware = uploadMw.single('clip');
+
+export async function uploadClip(
+  req: AuthedRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const file = (req as AuthedRequest & { file?: Express.Multer.File }).file;
+    if (!file) throw httpError(400, 'No clip file received');
+    const ext = file.originalname.match(/\.(mp4|mov|webm|mkv|m4v)$/i)?.[0]?.toLowerCase() ?? '.mp4';
+    const key = `clips/${randomUUID()}${ext}`;
+    const url = await uploadBuffer(key, file.buffer, file.mimetype || 'video/mp4');
+    res.json({ url, sizeBytes: file.size, originalName: file.originalname });
+  } catch (err) {
+    next(err);
+  }
 }
 
 /**

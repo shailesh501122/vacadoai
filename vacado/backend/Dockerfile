@@ -14,7 +14,11 @@ FROM node:20-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 # ffmpeg is required by videoService for composition.
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg openssl \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg openssl \
+    fonts-noto-core fonts-noto-cjk fonts-noto-color-emoji \
+    fontconfig \
+  && fc-cache -fv \
   && rm -rf /var/lib/apt/lists/*
 COPY package.json ./
 RUN npm install --omit=dev

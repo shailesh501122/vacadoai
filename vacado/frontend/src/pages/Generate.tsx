@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Check, Search, Link2, ArrowRight, ArrowLeft, X, Plus, Zap,
+  Check, Search, Link2, ArrowRight, ArrowLeft, X, Plus, Zap, Upload, FileVideo,
   MessageSquare, Sparkles, Flag, Calendar, Clock, RefreshCw, Play,
 } from 'lucide-react';
 import { shortsApi } from '../api/endpoints';
@@ -35,6 +35,28 @@ export default function Generate() {
   const [tags, setTags] = useState('#inception #moviedecoded #cinemashort #dicaprio #christophernolan #endingexplained');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
+  const [clipUrl, setClipUrl] = useState<string | null>(null);
+  const [clipName, setClipName] = useState<string>('');
+  const [clipPct, setClipPct] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [clipErr, setClipErr] = useState('');
+
+  const onPickClip = async (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setClipErr('');
+    setClipPct(0);
+    setUploading(true);
+    try {
+      const { url, originalName } = await shortsApi.uploadClip(f, setClipPct);
+      setClipUrl(url);
+      setClipName(originalName);
+    } catch (err: any) {
+      setClipErr(err.response?.data?.error ?? 'Upload failed (max 100 MB, video only)');
+    } finally {
+      setUploading(false);
+    }
+  };
 
 
   const toggleLang = (c: string) =>
@@ -52,6 +74,7 @@ export default function Generate() {
         clipStyle, tone,
         duration: parseInt(duration, 10),
         voice, title, hashtags: tags,
+        sourceClipUrl: clipUrl ?? undefined,
       });
       setMsg('Queued! Generating your Short…');
       setTimeout(() => nav('/dashboard/shorts'), 1200);
@@ -125,6 +148,48 @@ export default function Generate() {
         <div className="card">
           <div className="card-head"><div><h3>Step 2 — Configure your Short</h3><div className="sub">Tune languages, clip style, voice and length</div></div></div>
           <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div className="field">
+              <label>Source clip <span style={{ color: 'var(--faint)', fontWeight: 400, marginLeft: 4 }}>(optional — upload your own footage, otherwise a branded backdrop is used)</span></label>
+              <div style={{
+                border: '2px dashed var(--border)', borderRadius: 10, padding: 16,
+                display: 'flex', alignItems: 'center', gap: 14, background: clipUrl ? 'var(--red-soft)' : '#fff',
+                borderColor: clipUrl ? 'var(--red)' : 'var(--border)',
+              }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 10, background: 'var(--red-soft)', color: 'var(--red)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {clipUrl ? <FileVideo size={22} /> : <Upload size={22} />}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {clipUrl ? (
+                    <>
+                      <div style={{ fontSize: 13.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{clipName}</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>Uploaded — will be used as the visual for this Short.</div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: 13.5, fontWeight: 600 }}>Drag/select an mp4 / mov clip</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>Up to 100 MB. Trimmed/cropped to 9:16 with captions burnt in.</div>
+                    </>
+                  )}
+                  {uploading && (
+                    <div className="bar" style={{ marginTop: 8 }}>
+                      <div className="fill" style={{ width: `${clipPct}%` }} />
+                    </div>
+                  )}
+                  {clipErr && <div style={{ fontSize: 12.5, color: 'var(--red)', marginTop: 6 }}>{clipErr}</div>}
+                </div>
+                <label className="btn outline sm" style={{ cursor: 'pointer' }}>
+                  <input type="file" accept="video/*" hidden onChange={onPickClip} disabled={uploading} />
+                  {clipUrl ? 'Replace' : (uploading ? `${clipPct}%` : 'Choose file')}
+                </label>
+                {clipUrl && !uploading && (
+                  <button className="act-btn" title="Remove" onClick={() => { setClipUrl(null); setClipName(''); }}><X size={16} /></button>
+                )}
+              </div>
+            </div>
+
             <div className="field">
               <label>Languages <span style={{ color: 'var(--faint)', fontWeight: 400, marginLeft: 4 }}>(50+ supported — picked {langs.length})</span></label>
               <div className="chip-row">

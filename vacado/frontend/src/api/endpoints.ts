@@ -17,10 +17,19 @@ export const shortsApi = {
   get: (id: string) => api.get(`/shorts/${id}`).then((r) => r.data),
   generate: (d: Record<string, unknown>) =>
     api.post('/shorts/generate', d).then((r) => r.data),
+  uploadClip: (file: File, onProgress?: (pct: number) => void) => {
+    const fd = new FormData();
+    fd.append('clip', file);
+    return api
+      .post('/shorts/upload-clip', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (e) => {
+          if (onProgress && e.total) onProgress(Math.round((e.loaded * 100) / e.total));
+        },
+      })
+      .then((r) => r.data as { url: string; sizeBytes: number; originalName: string });
+  },
   remove: (id: string) => api.delete(`/shorts/${id}`).then((r) => r.data),
-  publish: (id: string) => api.post(`/shorts/${id}/publish`).then((r) => r.data),
-  schedule: (id: string, scheduledAt: string) =>
-    api.post(`/shorts/${id}/schedule`, { scheduledAt }).then((r) => r.data),
 };
 
 
