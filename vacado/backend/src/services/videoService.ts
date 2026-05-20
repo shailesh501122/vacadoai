@@ -92,10 +92,11 @@ export async function composeVideo(opts: {
     const hasClip = opts.clip.length > 0;
     if (hasClip) await writeFile(clipPath, opts.clip);
 
-    // 4K vertical (2160x3840) for highest-fidelity output. Override with
-    // VIDEO_WIDTH / VIDEO_HEIGHT env vars if a host is too slow for 4K.
-    const W = Number(process.env.VIDEO_WIDTH ?? 2160);
-    const H = Number(process.env.VIDEO_HEIGHT ?? 3840);
+    // Default to 1080x1920 (Shorts native, fast on small VMs). Set
+    // VIDEO_WIDTH=2160 VIDEO_HEIGHT=3840 in .env to opt into 4K when the
+    // host has the RAM/CPU for it.
+    const W = Number(process.env.VIDEO_WIDTH ?? 1080);
+    const H = Number(process.env.VIDEO_HEIGHT ?? 1920);
 
     const videoInput = hasClip
       ? ['-i', 'clip.mp4']
@@ -128,9 +129,9 @@ export async function composeVideo(opts: {
       '-c:v',
       'libx264',
       '-preset',
-      'medium',
+      H >= 2160 ? 'medium' : 'veryfast',
       '-crf',
-      '20',
+      H >= 2160 ? '20' : '22',
       '-profile:v',
       'high',
       '-level',

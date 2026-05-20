@@ -41,7 +41,8 @@ echo "==> Building images"
 "${COMPOSE[@]}" build
 
 echo "==> Starting stack on WEB_PORT=${WEB_PORT:-8080}"
-"${COMPOSE[@]}" up -d --remove-orphans
+# --force-recreate guarantees no stale containers survive a deploy.
+"${COMPOSE[@]}" up -d --remove-orphans --force-recreate
 
 # ── 3. Health check ──
 echo "==> Waiting for API health"
