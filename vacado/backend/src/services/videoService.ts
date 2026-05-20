@@ -92,18 +92,26 @@ export async function composeVideo(opts: {
     const hasClip = opts.clip.length > 0;
     if (hasClip) await writeFile(clipPath, opts.clip);
 
+    // 4K vertical (2160x3840) for highest-fidelity output. Override with
+    // VIDEO_WIDTH / VIDEO_HEIGHT env vars if a host is too slow for 4K.
+    const W = Number(process.env.VIDEO_WIDTH ?? 2160);
+    const H = Number(process.env.VIDEO_HEIGHT ?? 3840);
+
     const videoInput = hasClip
       ? ['-i', 'clip.mp4']
       : [
           '-f',
           'lavfi',
           '-i',
-          `color=c=0x1a0606:s=1080x1920:d=${opts.duration}`,
+          `color=c=0x1a0606:s=${W}x${H}:d=${opts.duration}`,
         ];
 
-    const baseScale =
-      'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920';
-    const withSubs = `${baseScale},subtitles='subs.srt':force_style='FontName=DejaVu Sans,FontSize=18,PrimaryColour=&Hffffff&,OutlineColour=&H80000000&,BorderStyle=3,Outline=2,Alignment=2,MarginV=120'`;
+    const baseScale = `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H}`;
+    // Caption sizing scales with resolution so it stays readable at 4K.
+    const fontSize = Math.round(H * 0.026);
+    const marginV = Math.round(H * 0.07);
+    const withSubs =
+      `${baseScale},subtitles='subs.srt':force_style='FontName=DejaVu Sans,FontSize=${fontSize},PrimaryColour=&Hffffff&,OutlineColour=&H80000000&,BorderStyle=3,Outline=3,Alignment=2,MarginV=${marginV}'`;
 
     const buildArgs = (vf: string) => [
       '-y',
@@ -120,11 +128,21 @@ export async function composeVideo(opts: {
       '-c:v',
       'libx264',
       '-preset',
-      'veryfast',
+      'medium',
+      '-crf',
+      '20',
+      '-profile:v',
+      'high',
+      '-level',
+      '5.1',
+      '-movflags',
+      '+faststart',
       '-pix_fmt',
       'yuv420p',
       '-c:a',
       'aac',
+      '-b:a',
+      '192k',
       '-t',
       String(opts.duration),
       'out.mp4',

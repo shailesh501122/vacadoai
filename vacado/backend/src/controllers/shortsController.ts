@@ -1,7 +1,12 @@
 import { Response, NextFunction } from 'express';
+import { createReadStream } from 'fs';
+import { stat } from 'fs/promises';
+import { join } from 'path';
+import axios from 'axios';
 import { z } from 'zod';
 import { prisma } from '../config/db';
 import { PLANS } from '../config/plans';
+import { env } from '../config/env';
 import { AuthedRequest } from '../middleware/authMiddleware';
 import { httpError, paginate } from '../utils/helpers';
 import { enqueueGeneration } from '../jobs/queue';
@@ -185,4 +190,54 @@ export async function schedule(
 // Surface plan catalog for the pricing UI.
 export function plans(_req: AuthedRequest, res: Response): void {
   res.json({ plans: Object.values(PLANS) });
+}
+
+/**
+ * Stream a generated Short to the browser as a proper .mp4 download.
+ * Works for both the local-media fallback and S3-hosted videos, and sets
+ * Content-Disposition so browsers actually save the file (not render it
+ * as HTML, which is what was happening when /media wasn't proxied).
+ */
+export async function download(
+  req: AuthedRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const short = await prisma.short.findFirst({
+      where: { id: req.params.id, userId: req.userId! },
+    });
+    if (!short) throw httpError(404, 'Short not found');
+    if (!short.videoUrl) throw httpError(409, 'Video is not ready yet');
+
+    const safe = `${short.movieTitle}-${short.language}-${short.id}`
+      .replace(/[^A-Za-z0-9._-]+/g, '_')
+      .slice(0, 80);
+    const filename = `Vacado-${safe}.mp4`;
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${filename}"`,
+    );
+
+    // Local-fallback URLs look like "/media/videos/<id>.mp4".
+    if (short.videoUrl.startsWith('/media/')) {
+      const relative = short.videoUrl.replace(/^\/media\//, '');
+      const filePath = join(env.media.dir, relative);
+      const s = await stat(filePath);
+      res.setHeader('Content-Length', String(s.size));
+      createReadStream(filePath).pipe(res);
+      return;
+    }
+
+    // Absolute URL (S3/R2 etc) — proxy stream with the same disposition.
+    const upstream = await axios.get(short.videoUrl, { responseType: 'stream' });
+    const len = upstream.headers['content-length'];
+    if (typeof len === 'string' || typeof len === 'number') {
+      res.setHeader('Content-Length', String(len));
+    }
+    upstream.data.pipe(res);
+  } catch (err) {
+    next(err);
+  }
 }

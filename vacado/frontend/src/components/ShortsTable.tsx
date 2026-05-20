@@ -71,8 +71,13 @@ export default function ShortsTable({
               <td><span style={{ color: 'var(--muted)' }}>{new Date(r.createdAt).toLocaleDateString()}</span></td>
               <td>
                 <div className="actions-cell" style={{ justifyContent: 'flex-end' }}>
-                  {r.status === 'PUBLISHED' && r.videoUrl && (
-                    <a className="act-btn" title="Download" href={r.videoUrl} target="_blank" rel="noreferrer" download>
+                  {r.videoUrl && (
+                    <a
+                      className="act-btn"
+                      title="Download MP4"
+                      href={`/api/shorts/${r.id}/download`}
+                      download
+                    >
                       <Download size={16} />
                     </a>
                   )}
