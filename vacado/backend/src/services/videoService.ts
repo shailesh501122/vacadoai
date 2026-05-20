@@ -23,27 +23,6 @@ export async function fetchClipFromUrl(url: string): Promise<Buffer> {
   return Buffer.from(res.data);
 }
 
-/**
- * Source-clip fetch. In production this calls a licensed movie-clip API;
- * the fallback resolves a public trailer clip URL by movie title. If nothing
- * is available it returns an empty buffer and composeVideo uses a backdrop.
- */
-export async function fetchSourceClip(movieTitle: string): Promise<Buffer> {
-  const url = `https://storage.googleapis.com/vacado-public/clips/${encodeURIComponent(
-    movieTitle.toLowerCase().replace(/\s+/g, '-'),
-  )}.mp4`;
-  try {
-    const res = await axios.get<ArrayBuffer>(url, {
-      responseType: 'arraybuffer',
-      timeout: 30000,
-    });
-    return Buffer.from(res.data);
-  } catch {
-    logger.warn(`No source clip for "${movieTitle}", using generated backdrop`);
-    return Buffer.alloc(0);
-  }
-}
-
 function run(cmd: string, args: string[], cwd?: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const p = spawn(cmd, args, { cwd });

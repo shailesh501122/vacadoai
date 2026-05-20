@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Key, Trash2, Copy, Plus, Sparkles, Save, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { apiKeysApi, adminApi } from '../api/endpoints';
@@ -114,11 +114,13 @@ function AIProvidersCard() {
     adminApi.getSettings().then((d) => setState(d.settings ?? [])).catch(() => undefined);
   useEffect(() => { load(); }, []);
 
-  const FIELDS: { key: string; label: string; placeholder: string; hint?: string }[] = [
+  const FIELDS: { key: string; label: string; placeholder: string; hint?: React.ReactNode }[] = [
     { key: 'OPENAI_API_KEY', label: 'Script API key', placeholder: 'gsk_… (Groq) or sk-… (OpenAI)', hint: 'Used to generate the narration script.' },
     { key: 'OPENAI_BASE_URL', label: 'Script API base URL', placeholder: 'https://api.groq.com/openai/v1', hint: 'Leave blank for OpenAI; set https://api.groq.com/openai/v1 for Groq.' },
     { key: 'OPENAI_MODEL', label: 'Script model', placeholder: 'llama-3.3-70b-versatile', hint: 'gpt-4o, llama-3.3-70b-versatile, gemini-1.5-flash, etc.' },
-    { key: 'ELEVENLABS_API_KEY', label: 'Voiceover API key (ElevenLabs)', placeholder: 'sk_…', hint: 'Free tier: ~10,000 characters/month.' },
+    { key: 'ELEVENLABS_API_KEY', label: 'Voiceover API key (ElevenLabs)', placeholder: 'sk_…', hint: <>Free tier: ~10,000 chars/month. <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noreferrer" style={{ color: 'var(--red)' }}>Get key</a></> },
+    { key: 'PEXELS_API_KEY', label: 'Stock video API key (Pexels)', placeholder: 'Your Pexels API key', hint: <>Free stock b-roll behind your captions. <a href="https://www.pexels.com/api/new/" target="_blank" rel="noreferrer" style={{ color: 'var(--red)' }}>Get key (free)</a></> },
+    { key: 'TMDB_API_KEY', label: 'Movie database API key (TMDB)', placeholder: 'Your TMDB v3 API key', hint: <>Fetches the movie's official backdrop/poster as a Ken-Burns animated background. <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noreferrer" style={{ color: 'var(--red)' }}>Get key (free)</a></> },
   ];
 
   const save = async () => {

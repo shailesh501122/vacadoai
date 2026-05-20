@@ -18,6 +18,8 @@ export const SETTING_KEYS = [
   'OPENAI_BASE_URL',
   'OPENAI_MODEL',
   'ELEVENLABS_API_KEY',
+  'PEXELS_API_KEY',
+  'TMDB_API_KEY',
 ] as const;
 export type SettingKey = (typeof SETTING_KEYS)[number];
 

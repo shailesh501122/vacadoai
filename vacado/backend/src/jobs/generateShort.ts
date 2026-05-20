@@ -2,7 +2,8 @@ import { prisma } from '../config/db';
 import { logger } from '../utils/logger';
 import { generateScript, generateThumbnail, generateMetadata } from '../services/aiService';
 import { synthesizeVoiceover } from '../services/voiceoverService';
-import { fetchSourceClip, fetchClipFromUrl, composeVideo } from '../services/videoService';
+import { fetchClipFromUrl, composeVideo } from '../services/videoService';
+import { buildAutoBackground } from '../services/stockClipService';
 import { uploadBuffer } from '../services/s3Service';
 import { sendEmail, emails } from '../services/emailService';
 import type { GenerateShortJob } from './queue';
@@ -50,13 +51,22 @@ export async function processGenerateShort(data: GenerateShortJob): Promise<void
       'audio/mpeg',
     );
 
-    // 3. Source clip — user upload if provided, otherwise placeholder fallback
+    // 3. Source clip — user upload if provided, else fully-automatic stack:
+    //    Pexels stock b-roll → TMDB backdrop with Ken Burns → branded backdrop.
     const clip = short.sourceClipUrl
       ? await fetchClipFromUrl(short.sourceClipUrl).catch((e) => {
           logger.warn(`Source clip fetch failed (${short.sourceClipUrl}): ${e}`);
           return Buffer.alloc(0);
         })
-      : await fetchSourceClip(short.movieTitle);
+      : await buildAutoBackground({
+          movieTitle: short.movieTitle,
+          clipStyle: short.clipStyle ?? undefined,
+          tone: short.tone ?? undefined,
+          duration: short.duration,
+        }).catch((e) => {
+          logger.warn(`Auto background failed: ${e}`);
+          return Buffer.alloc(0);
+        });
 
     // 4. Compose final video
     const video = await composeVideo({

@@ -26,6 +26,8 @@ export const updateSettingsSchema = z.object({
   OPENAI_BASE_URL: z.string().optional(),
   OPENAI_MODEL: z.string().optional(),
   ELEVENLABS_API_KEY: z.string().optional(),
+  PEXELS_API_KEY: z.string().optional(),
+  TMDB_API_KEY: z.string().optional(),
 });
 
 export async function updateSettings(
